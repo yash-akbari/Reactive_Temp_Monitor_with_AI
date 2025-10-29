@@ -1,0 +1,9 @@
+.build
+.mbed
+projectfiles
+*.py*
+BUILD
+HTS221
+LPS22HB
+mbed-os
+wifi-ism43362
