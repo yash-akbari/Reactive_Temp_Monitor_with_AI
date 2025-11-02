@@ -1,6 +1,9 @@
 {
     "name": "ism43362",
     "config": {
+	    "wifi-country-code": {
+            "help": "Country Code to specify channel number"
+        },
         "wifi-miso": {
             "help": "SPI-MISO connection to external device",
             "value": "NC"
@@ -36,6 +39,14 @@
         "provide-default": {
             "help": "Provide default WifiInterface. [true/false]",
             "value": false
+        },
+        "read-thread-stack-size": {
+            "help": "Stack size of the read thread, defaults to MBED_CONF_APP_THREAD_STACK_SIZE or MBED_CONF_RTOS_THREAD_STACK_SIZE (default: 4096)",
+            "value": null
+        },
+        "read-thread-stack-statically-allocated": {
+            "help": "Whether to statically allocate the memory for the read thread stack. Requires 'read-thread-stack-size' to be set.",
+            "value": false
         }
     },
     "target_overrides": {
@@ -50,6 +61,16 @@
             "ism43362.provide-default": true
         },
         "DISCO_L475VG_IOT01A": {
+            "ism43362.wifi-miso": "PC_11",
+            "ism43362.wifi-mosi": "PC_12",
+            "ism43362.wifi-sclk": "PC_10",
+            "ism43362.wifi-nss": "PE_0",
+            "ism43362.wifi-reset": "PE_8",
+            "ism43362.wifi-dataready": "PE_1",
+            "ism43362.wifi-wakeup": "PB_13",
+            "ism43362.provide-default": true
+        },
+        "B_L4S5I_IOT01A": {
             "ism43362.wifi-miso": "PC_11",
             "ism43362.wifi-mosi": "PC_12",
             "ism43362.wifi-sclk": "PC_10",

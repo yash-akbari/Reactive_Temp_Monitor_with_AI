@@ -132,20 +132,12 @@ public:
 
     /** Scan for available networks
      *
-     * @param  ap    Pointer to allocated array to store discovered AP
+     * @param  ap    Pointer to allocated array to store discovered AP, or 0 to only count available AP
      * @param  limit Size of allocated @a res array, or 0 to only count available AP
      * @return       Number of entries in @a res, or if @a count was 0 number of available networks, negative on error
      *               see @a nsapi_error
      */
     int scan(WiFiAccessPoint *res, unsigned limit);
-
-    /**Perform a dns query
-    *
-    * @param name Hostname to resolve
-    * @param ip   Buffer to store IP address
-    * @return 0 true on success, false on failure
-    */
-    bool dns_lookup(const char *name, char *ip);
 
     /**
     * Open a socketed connection
@@ -154,9 +146,13 @@ public:
     * @param id id to give the new socket, valid 0-4
     * @param port port to open connection with
     * @param addr the IP address of the destination
-    * @return true only if socket opened successfully
+    * @return
+    * @   NSAPI_ERROR_OK : socket opened successfully
+    * @   NSAPI_ERROR_PARAMETER : invalid configuration
+    * @   NSAPI_ERROR_DEVICE_ERROR :
+    * @   failure interfacing with the network processor
     */
-    bool open(const char *type, int id, const char *addr, int port);
+    int open(const char *type, int id, const char *addr, int port);
 
     /**
     * Sends data to an open socket
@@ -224,6 +220,13 @@ public:
         attach(Callback<void()>(obj, method));
     }
 
+    /** Get the connection status
+     *
+     *  @return         The connection status according to ConnectionStatusType
+     */
+    nsapi_connection_status_t connection_status() const;
+
+
 private:
     BufferedSpi _bufferspi;
     ATParser _parser;
@@ -231,6 +234,12 @@ private:
     volatile int _active_id;
     void print_rx_buff(void);
     bool check_response(void);
+
+#ifdef MBED_CONF_ISM43362_WIFI_COUNTRY_CODE
+    bool check_country_code(const char *country_code);
+    char WIFI_module_country_code[5];
+#endif
+
     struct packet {
         struct packet *next;
         int id;
@@ -245,6 +254,39 @@ private:
     char _netmask_buffer[16];
     char _mac_buffer[18];
     uint32_t _FwVersionId;
+
+    // Connection state reporting
+    nsapi_connection_status_t _conn_status;
+    mbed::Callback<void()> _conn_stat_cb;
+
+    typedef struct {
+        char cc[3];
+    } COUNTRY_CODE;
+
+    COUNTRY_CODE CountryCodeElevenChannels[12] = {"AS", "CA", "FM", "GU", "KY", "MP", "PR", "TW",
+                                                  "UM", "US", "VI", "ED"
+                                                 };
+
+    COUNTRY_CODE CountryCodeThirteenChannels[127] = {"AE", "AG", "AN", "AR", "AT", "AU", "AW",
+                                                     "AZ", "BA", "BB", "BD", "BE", "BG", "BH",
+                                                     "BM", "BN", "BO", "BR", "BS", "BT", "BY",
+                                                     "CH", "CN", "CL", "CO", "CR", "CU", "CV",
+                                                     "CY", "CZ", "DE", "DK", "DM", "DO", "EC",
+                                                     "EE", "EG", "ES", "FI", "FK", "FR", "GB",
+                                                     "GF", "GG", "GI", "GP", "GR", "GT", "HK",
+                                                     "HN", "HR", "HT", "HU", "ID", "IE", "IL",
+                                                     "IM", "IN", "IS", "IT", "JE", "JM", "JO",
+                                                     "KE", "KI", "KR", "KW", "LA", "LB", "LI",
+                                                     "LK", "LS", "LT", "LU", "LV", "MA", "MC",
+                                                     "MK", "MO", "MQ", "MR", "MT", "MU", "MV",
+                                                     "MW", "MX", "MY", "NG", "NI", "NL", "NO",
+                                                     "NZ", "OM", "PA", "PE", "PG", "PH", "PK",
+                                                     "PL", "PM", "PT", "RE", "RO", "RU", "SA",
+                                                     "SE", "SG", "SI", "SK", "SV", "TH", "TJ",
+                                                     "TN", "TR", "TT", "TZ", "UA", "UY", "UZ",
+                                                     "VA", "VE", "VG", "VN", "YT", "ZA", "ZM",
+                                                     "ED"
+                                                    };
 };
 
 #endif

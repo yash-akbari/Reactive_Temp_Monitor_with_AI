@@ -2,7 +2,7 @@
 
 The mbed OS driver for the ISM43362 WiFi module
 
-https://www.inventeksys.com/products-page/wifi-modules/ism4336-m3g-l44-e-embedded-serial-to-wifi-module/
+https://www.inventeksys.com/ism4336-m3g-l44-e-embedded-serial-to-wifi-module/
 
 
 ## Currently supported platforms
@@ -11,6 +11,7 @@ ISM43362 module is soldered on the following platforms from STMicroelectronics
 
  * [DISCO_L475VG_IOT01A](https://os.mbed.com/platforms/ST-Discovery-L475E-IOT01A/)
  * [DISCO_F413ZH](https://os.mbed.com/platforms/ST-Discovery-F413H/)
+ * [B_L4S5I_IOT01A](https://os.mbed.com/platforms/B-L4S5I-IOT01A/)
 
 ## Configuration
 
@@ -36,15 +37,25 @@ Some debug print on console can help to debug if necessary.
 
 Another way to enable these prints is overwrite MBED_CONF_ISM43362_WIFI_DEBUG in your json file:
             "ism43362.wifi-debug": true
+			
+## Options
+
+Country code can be specified by using the "ism43362.wifi-country-code" parameter of mbed_app.json.
+
+The default country code = US (USA)
+
+Link between code and country is here :
+https://www.juniper.net/documentation/en_US/release-independent/junos/topics/reference/specifications/access-point-ax411-country-channel-support.html
+
+Useful to use all the Radio Channels available in a country.
 
 
-## Firmware version
+## Firmware version & firmware update
 
-This driver has been tested with C3.5.2.2 and C3.5.2.3.BETA9 firmware version
+The recommended firmware version is ISM43362-M3G-L44-SPI-C3.5.2.5.STM
 
-## wifi module FW update
+The utility to upgrade firmware on B-L475-IOT01A and B_L4S5I_IOT01A boards can be found here: https://www.st.com/resource/en/utilities/inventek_fw_updater.zip
 
-Only Wifi module from DISCO_L475VG_IOT01A can be updated (HW limitation for DISCO_F413ZH).
+It contains instructions and URL where to get firmware from (https://www.inventeksys.com/iwin/firmware/)
 
-For more information about the wifi FW version, refer to the detailed procedure in
-http://www.st.com/content/st_com/en/products/embedded-software/mcus-embedded-software/stm32-embedded-software/stm32cube-embedded-software-expansion/x-cube-azure.html
+Note that only Wifi module from DISCO_F413ZH cannot be updated (HW limitation).

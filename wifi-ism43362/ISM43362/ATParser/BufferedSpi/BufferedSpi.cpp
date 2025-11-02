@@ -22,6 +22,7 @@
 
 #include "BufferedSpi.h"
 #include <stdarg.h>
+#include <inttypes.h>
 #include "mbed_debug.h"
 #include "mbed_error.h"
 
@@ -44,7 +45,7 @@ int BufferedSpi::wait_cmddata_rdy_high(void)
 
     /* wait for dataready = 1 */
     while (dataready.read() == 0) {
-        if (timer.read_ms() > _timeout) {
+        if (chrono::duration_cast<chrono::milliseconds>(timer.elapsed_time()).count() > _timeout) {
             debug_if(local_debug, "ERROR: SPI write timeout\r\n");
             return -1;
         }
@@ -61,7 +62,7 @@ int BufferedSpi::wait_cmddata_rdy_rising_event(void)
     timer.start();
 
     while (_cmddata_rdy_rising_event == 1) {
-        if (timer.read_ms() > _timeout) {
+        if (chrono::duration_cast<chrono::milliseconds>(timer.elapsed_time()).count() > _timeout) {
             _cmddata_rdy_rising_event = 0;
             if (dataready.read() == 1) {
                 debug_if(local_debug, "ERROR: We missed rising event !! (timemout=%d)\r\n", _timeout);
@@ -86,6 +87,8 @@ BufferedSpi::BufferedSpi(PinName mosi, PinName miso, PinName sclk, PinName _nss,
     _datareadyInt->rise(callback(this, &BufferedSpi::DatareadyRising));
 
     _cmddata_rdy_rising_event = 1;
+    nss = 1;
+    wait_us(15);
 
     return;
 }
@@ -110,10 +113,12 @@ void BufferedSpi::disable_nss()
 {
     nss = 1;
     wait_us(15);
+    unlock();
 }
 
 void BufferedSpi::enable_nss()
 {
+    lock();
     nss = 0;
     wait_us(15);
 }
@@ -199,10 +204,6 @@ ssize_t BufferedSpi::buffwrite(const void *s, size_t length)
         while (ptr != end) {
             _txbuf = *(ptr++);
         }
-        if (length & 1) { /* padding to send the last char */
-            _txbuf = '\n';
-            length++;
-        }
 
         /* 2nd write in SPI */
         BufferedSpi::txIrq();                // only write to hardware in one place
@@ -225,12 +226,6 @@ ssize_t BufferedSpi::buffsend(size_t length)
 
     this->enable_nss();
 
-    /* _txbuffer is already filled with data to send */
-    /* check if _txbuffer needs padding to send the last char */
-    if (length & 1) {
-        _txbuf = '\n';
-        length++;
-    }
     BufferedSpi::txIrq();                // only write to hardware in one place
 
     this->disable_nss();
@@ -248,8 +243,6 @@ ssize_t BufferedSpi::read(uint32_t max)
     uint32_t len = 0;
     uint8_t FirstRemoved = 1;
     int tmp;
-
-    disable_nss();
 
     /* wait for data ready is up */
     if (wait_cmddata_rdy_rising_event() != 0) {
@@ -279,7 +272,7 @@ ssize_t BufferedSpi::read(uint32_t max)
         return -1;
     }
 
-    debug_if(local_debug, "SPI READ %d BYTES\r\n", len);
+    debug_if(local_debug, "SPI READ %" PRIu32 " BYTES\r\n", len);
 
     return len;
 }
@@ -289,14 +282,21 @@ void BufferedSpi::txIrq(void)
     /* write everything available in the _txbuffer */
     int value = 0;
     int dbg_cnt = 0;
-    while (_txbuf.available() && (_txbuf.getNbAvailable() > 0)) {
+
+    while (_txbuf.available()) {
+        /*  Get first 8 bits */
         value = _txbuf.get();
-        if (_txbuf.available() && ((_txbuf.getNbAvailable() % 2) != 0)) {
+        /* then next 8 bits to build 16 bits words to be sent on SPI */
+        if (_txbuf.available()) {
             value |= ((_txbuf.get() << 8) & 0XFF00);
-            SPI::write(value);
-            dbg_cnt++;
+        } else {
+            /*  In case of ODD size, add a \n char padding */
+            value |= (('\n' << 8) & 0XFF00);
         }
+        SPI::write(value);
+        dbg_cnt++;
     }
+
     debug_if(local_debug, "SPI Sent %d BYTES\r\n", 2 * dbg_cnt);
     // disable the TX interrupt when there is nothing left to send
     BufferedSpi::attach(NULL, BufferedSpi::TxIrq);

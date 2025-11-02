@@ -78,7 +78,7 @@ int ATParser::write(const char *data, int size_of_data, int size_in_buff)
     int i = 0;
     _bufferMutex.lock();
     debug_if(dbg_on, "ATParser write: %d BYTES\r\n", size_of_data);
-    debug_if(AT_DATA_PRINT, "ATParser write: (ASCII) ", size_of_data);
+    debug_if(AT_DATA_PRINT, "ATParser write: (ASCII) ");
     for (; i < size_of_data; i++) {
         debug_if(AT_DATA_PRINT, "%c", data[i]);
         if (putc(data[i]) < 0) {
@@ -107,6 +107,7 @@ int ATParser::read(char *data)
         readsize = _serial_spi->read();
     } else {
         debug_if(dbg_on, "Pending data when reading from WIFI\r\n");
+        _bufferMutex.unlock();
         return -1;
     }
 
@@ -268,6 +269,7 @@ bool ATParser::vrecv(const char *response, va_list args)
     if (!_serial_spi->readable()) {
         // debug_if(dbg_on, "NO DATA, read again\r\n");
         if (_serial_spi->read() < 0) {
+            _bufferMutex.unlock();
             return false;
         }
     }
@@ -353,10 +355,12 @@ restart:
 
             // Check for match
             int count = -1;
-            if (whole_line_wanted && c != '\n') {
+            if (whole_line_wanted && c != '\n' &&  c != '\r') {
                 // Don't attempt scanning until we get delimiter if they included it in format
                 // This allows recv("Foo: %s\n") to work, and not match with just the first character of a string
                 // (scanf does not itself match whitespace in its format string, so \n is not significant to it)
+                // New ATCommand F0=2 ends with \r only whereas other commands end with \r\n ,
+                // so take both characters \r and \n into account to determine the end of line
             } else {
                 sscanf(_buffer + offset, _buffer, &count);
             }
@@ -378,8 +382,8 @@ restart:
 
             // Clear the buffer when we hit a newline or ran out of space
             // running out of space usually means we ran into binary data
-            if ((c == '\n')) {
-                // debug_if(dbg_on, "New line AT<<< %s", _buffer+offset);
+            if ((c == '\n') || (c == '\r')) {
+                debug_if(dbg_on, "New line AT<<< %s", _buffer + offset);
                 j = 0;
             }
             if ((j + 1 >= (_buffer_size - offset))) {
