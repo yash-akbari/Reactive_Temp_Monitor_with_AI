@@ -14,6 +14,7 @@ nsapi_error_t network_init() {
     nsapi_error_t result = wifi_interface.set_credentials(WIFI_SSID, WIFI_PASSWORD, WIFI_SECURITY);
     if (result != NSAPI_ERROR_OK) {
         printf("Error: set_credentials failed! (%d)\n", result);
+        wait_us(100000);
         return result;
     }
 
@@ -21,6 +22,8 @@ nsapi_error_t network_init() {
     result = wifi_interface.connect();
     if (result != NSAPI_ERROR_OK) {
         printf("Error: connect failed! (%d)\n", result);
+
+        wait_us(100000);
         return result;
     }
 
@@ -28,7 +31,7 @@ nsapi_error_t network_init() {
     SocketAddress addr;
     wifi_interface.get_ip_address(&addr);
     printf("WiFi Connected. IP Address: %s\n", addr.get_ip_address());
-
+wait_us(100000);
     return NSAPI_ERROR_OK;
 }
 
@@ -39,5 +42,6 @@ NetworkInterface* network_get_interface() {
 void network_disconnect() {
     printf("Disconnecting WiFi...\n");
     wifi_interface.disconnect();
+    wait_us(100000);
     printf("WiFi Disconnected.\n");
 }

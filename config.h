@@ -1,40 +1,99 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#ifdef __cplusplus
 #include "mbed.h"
 
-// --- User-Defined Temperature Thresholds ---
-const float UPPER_THRESHOLD = 35.0f; // Celsius
-const float LOWER_THRESHOLD = 15.0f; // Celsius
+// Undefine default Arduino I2C pins to avoid redefinition warnings
+#ifdef I2C_SDA
+#undef I2C_SDA
+#endif
+#ifdef I2C_SCL
+#undef I2C_SCL
+#endif
 
-// --- System Configuration ---
-const int SAMPLE_INTERVAL_MS = 5000; // Read sensors every 5 seconds
-const int SAMPLES_PER_HOUR = (3600 * 1000) / SAMPLE_INTERVAL_MS;
+#endif // __cplusplus
+
+
+// --- User-Defined Temperature Thresholds ---
+// All values are in degrees Celsius (°C)
+
+// (HIGH) Threshold for triggering a "High Temperature" warning.
+#define TEMP_THRESHOLD_HIGH 30.0f
+
+// (CRITICAL) Threshold for triggering a "Critical Temperature" warning.
+#define TEMP_THRESHOLD_CRITICAL 35.0f
+
+// (LOW) Threshold for triggering a "Low Temperature" warning.
+#define TEMP_THRESHOLD_LOW 5.0f
+
+// Aliases for display and warnings modules
+#define LOWER_THRESHOLD TEMP_THRESHOLD_LOW
+#define UPPER_THRESHOLD TEMP_THRESHOLD_HIGH
+
 
 // --- Pin Definitions ---
 // I2C Pins for HTS221 & LPS22HB sensors
 #define I2C_SDA PB_11
 #define I2C_SCL PB_10
-// Warning LED Pin
-#define WARNING_LED LED2
 
-// --- AI Anomaly Detection Configuration ---
-const int RATE_BUFFER_SIZE = 60; // Learns from the last 60 samples (5 minutes)
-const float ANOMALY_Z_SCORE_THRESHOLD = 3.0f; // 3-Sigma rule
+// Warning LED Pin (for temperature/anomaly alerts)
+// Using PB_13 as default - adjust if using different pin on your board
+#define WARNING_LED LED1
 
-// --- WiFi Credentials ---
-#define WIFI_SSID "Your_WiFi_SSID"
-#define WIFI_PASSWORD "Your_WiFi_Password"
-#define WIFI_SECURITY NSAPI_SECURITY_WPA_WPA2 // Or NSAPI_SECURITY_NONE, etc.
+// --- Sensor Update Interval ---
+// Defines how often (in milliseconds) the sensors are read.
+#define SENSOR_UPDATE_INTERVAL_MS 2000
+#define SAMPLE_INTERVAL_MS SENSOR_UPDATE_INTERVAL_MS
 
-// --- MQTT Broker Configuration ---
-#define MQTT_BROKER_HOSTNAME "your_mqtt_broker.com" // e.g., "test.mosquitto.org"
+// --- Temperature Tracking ---
+// Number of samples per hour (for rolling 1-hour statistics)
+// At 2000ms intervals: 60 minutes * 60 seconds / 2 seconds = 1800 samples per hour
+// Using a practical value: 1800 samples = exactly 1 hour at 2000ms intervals
+#define SAMPLES_PER_HOUR 1800
+
+// --- MQTT Configuration ---
+#define MQTT_BROKER_HOSTNAME "broker.hivemq.com"
 #define MQTT_BROKER_PORT 1883
-#define MQTT_CLIENT_ID "STM32L4-TempWarn" // Must be unique
-#define MQTT_TOPIC_DATA "sensor/stm32l4/data"
-#define MQTT_TOPIC_STATUS "sensor/stm32l4/status"
-// Optional MQTT Authentication
-#define MQTT_USERNAME "" // Leave empty if no auth
-#define MQTT_PASSWORD "" // Leave empty if no auth
+
+// --- MQTT Topics ---
+// Topic for publishing sensor data (temperature, humidity, pressure).
+#define MQTT_TOPIC_DATA "iot-temp-monitor/data"
+
+// Topic for publishing system status and alerts (e.g., "High Temp", "OK").
+#define MQTT_TOPIC_STATUS "iot-temp-monitor/status"
+
+// Topic for publishing AI-detected anomalies.
+#define MQTT_TOPIC_ANOMALY "iot-temp-monitor/anomaly"
+
+// --- Anomaly Detection ---
+// The number of data points to use for the Simple Moving Average (SMA).
+#define SMA_WINDOW_SIZE 10
+
+// Buffer size for rate of change measurements (used in anomaly detector)
+#define RATE_BUFFER_SIZE SMA_WINDOW_SIZE
+
+// The standard deviation multiplier. A data point is an anomaly if it is
+// 'STD_DEV_MULTIPLIER' standard deviations away from the SMA.
+#define STD_DEV_MULTIPLIER 2.5f
+
+// Z-score threshold for anomaly detection (typically 2.0 to 3.0 sigma)
+#define ANOMALY_Z_SCORE_THRESHOLD STD_DEV_MULTIPLIER
+
+// --- WiFi Configuration ---
+// SSID and password for WiFi network
+#define WIFI_SSID "Pixel"
+#define WIFI_PASSWORD "1234567890"
+// WiFi Security type: 0 = NSAPI_SECURITY_NONE, 1 = NSAPI_SECURITY_WEP,
+// 2 = NSAPI_SECURITY_WPA, 3 = NSAPI_SECURITY_WPA2 (recommended)
+#define WIFI_SECURITY NSAPI_SECURITY_WPA2
+
+// --- MQTT Client Configuration ---
+// Client ID for MQTT (unique identifier for this device)
+#define MQTT_CLIENT_ID "temp_monitor_device_001"
+
+// MQTT authentication credentials (leave empty strings for anonymous)
+#define MQTT_USERNAME ""
+#define MQTT_PASSWORD ""
 
 #endif // CONFIG_H
