@@ -53,7 +53,7 @@
 #define SAMPLES_PER_HOUR 1800
 
 // --- MQTT Configuration ---
-#define MQTT_BROKER_HOSTNAME "broker.hivemq.com"
+#define MQTT_BROKER_HOSTNAME "192.168.29.45"
 #define MQTT_BROKER_PORT 1883
 
 // --- MQTT Topics ---
@@ -82,8 +82,8 @@
 
 // --- WiFi Configuration ---
 // SSID and password for WiFi network
-#define WIFI_SSID "Pixel"
-#define WIFI_PASSWORD "1234567890"
+#define WIFI_SSID "Jio"
+#define WIFI_PASSWORD "ram@123456"
 // WiFi Security type: 0 = NSAPI_SECURITY_NONE, 1 = NSAPI_SECURITY_WEP,
 // 2 = NSAPI_SECURITY_WPA, 3 = NSAPI_SECURITY_WPA2 (recommended)
 #define WIFI_SECURITY NSAPI_SECURITY_WPA2
